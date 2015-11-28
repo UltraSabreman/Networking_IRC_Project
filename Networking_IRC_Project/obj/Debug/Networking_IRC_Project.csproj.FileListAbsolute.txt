@@ -1,0 +1,2 @@
+c:\users\byelo\documents\visual studio 2015\Projects\Networking_IRC_Project\Networking_IRC_Project\bin\Debug\Networking_IRC_Project.exe.config
+C:\Users\byelo\Documents\Code\Networking_IRC_Project\Networking_IRC_Project\bin\Debug\Networking_IRC_Project.exe.config
