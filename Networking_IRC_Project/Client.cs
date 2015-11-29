@@ -11,7 +11,6 @@ namespace Networking_IRC_Project {
         public Client() {
             Console.Clear();
             Util.PrintLine("Mode: ", ConsoleColor.Green, "CLIENT");
-            Util.PrintLine("Type '", ConsoleColor.Yellow, "EXIT", "' to exit.");
 
             Init();
         }
@@ -21,7 +20,15 @@ namespace Networking_IRC_Project {
         }
 
         public void Init() {
-            connection = new TCPHandler(false);
+            Util.Print("Host Address: ");
+            String address = Console.ReadLine();
+            Util.Print("Host Port: ");
+            String port = Console.ReadLine();
+
+            Console.Clear();
+            Util.PrintLine("Type '", ConsoleColor.Yellow, "EXIT", "' to exit.");
+
+            connection = new TCPHandler(address, int.Parse(port), false);
 
             while (true) {
                 Util.Print("MSG: ");

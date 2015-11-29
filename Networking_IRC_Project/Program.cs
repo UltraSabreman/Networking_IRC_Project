@@ -5,6 +5,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
+//TODO: add listening functionality to client (echo)
+//TODO: ability to connec to loopback.
+//TODO: add connection status events (and handle them)
+
 namespace Networking_IRC_Project {
     class Program {
         private static Host host;
