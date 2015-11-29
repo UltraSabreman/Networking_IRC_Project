@@ -1,2 +1,7 @@
 c:\users\byelo\documents\visual studio 2015\Projects\Networking_IRC_Project\Networking_IRC_Project\bin\Debug\Networking_IRC_Project.exe.config
 C:\Users\byelo\Documents\Code\Networking_IRC_Project\Networking_IRC_Project\bin\Debug\Networking_IRC_Project.exe.config
+C:\Users\byelo\Documents\Code\Networking_IRC_Project\Networking_IRC_Project\bin\Debug\Networking_IRC_Project.exe
+C:\Users\byelo\Documents\Code\Networking_IRC_Project\Networking_IRC_Project\bin\Debug\Networking_IRC_Project.pdb
+C:\Users\byelo\Documents\Code\Networking_IRC_Project\Networking_IRC_Project\obj\Debug\Networking_IRC_Project.exe
+C:\Users\byelo\Documents\Code\Networking_IRC_Project\Networking_IRC_Project\obj\Debug\Networking_IRC_Project.pdb
+C:\Users\byelo\Documents\Code\Networking_IRC_Project\Networking_IRC_Project\obj\Debug\Networking_IRC_Project.csprojResolveAssemblyReference.cache
