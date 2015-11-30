@@ -31,10 +31,15 @@ namespace Networking_IRC_Project {
             Console.Clear();
             Util.PrintLine("Type '", ConsoleColor.Yellow, "EXIT", "' to exit.");
 
+
             if (String.IsNullOrEmpty(address))
                 connection = new TCPHandler();
             else if (String.IsNullOrEmpty(port))
                 connection = new TCPHandler(address);
+            else
+                connection = new TCPHandler(address, int.Parse(port));
+
+            Util.PrintLine("YAY 1");
 
             connection.OnConnection += (m, s) => {
                 if (s == ConnectionStatus.Succes) {
@@ -43,23 +48,33 @@ namespace Networking_IRC_Project {
                 } else
                     Util.Print(ConsoleColor.Red, "Disconnected");
             };
+            Util.PrintLine("YAY 2");
+
             connection.OnMsg += (s, msg) => {
                 //lock (theLock) {
                     Util.Print(msg);
                 //}
             };
+            Util.PrintLine("YAY 3");
 
             connection.CreateSocket(false);
+            Util.PrintLine("YAY 4");
 
             new Thread(() => {
+                Util.PrintLine("YAY 5");
 
                 while (!IsConnected) {
                     Thread.Sleep(500);
                 }
+                Util.PrintLine("YAY 6");
+
                 connection.Send("connect sabreman");
+                Util.PrintLine("YAY 7");
+
                 Thread.Sleep(3000);
                 connection.Send("ping");
                 Thread.Sleep(3000);
+
 
                 while (true) {
                     Util.Print("MSG: ");
@@ -71,6 +86,7 @@ namespace Networking_IRC_Project {
                     Thread.Sleep(1000);
                 }
             }).Start();
+
         }
 
         public void Draw() { 
