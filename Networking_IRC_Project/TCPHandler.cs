@@ -8,82 +8,34 @@ using System.Net;
 using System.Threading;
 
 namespace Networking_IRC_Project {
-    class TCPHandler: IDisposable {
+    public enum ConnectionStatus { Succes, Failure};
+    public class TCPHandler: IDisposable {
+        private const int MsgSize = 256;
         private Socket connection = null;
-        public delegate void TCPMsgHandler(String messeage);
+
+        public delegate void TCPMsgHandler(Socket recivingSocket, String messeage);
         public event TCPMsgHandler OnMsg;
+        public delegate void TCPConnection(String IP, ConnectionStatus status);
+        public event TCPConnection OnConnection;
 
         public bool KillConnection { get; set; } = false;
+        public bool IsListining { get; set; } = false;
         public String Address { set; get; }
         public int Port { set; get; }
 
-        public TCPHandler(bool IsHost = false) : this("localhost", 1337, IsHost) { }
-        
-        public TCPHandler(String address, int port, bool IsHost) {
+        public TCPHandler(String address = "localhost", int port = 1337) {
             Address = address;
             Port = port;
+        }
 
-            Connect(IsHost);
-            if (IsHost) {
+        public void CreateSocket(bool IsHost) {
+            if (!IsHost) {
+                Connect();
+            } else {
                 Listen();
             }
         }
 
-
-        public void Connect(bool IsHost = false) {
-            if (IsHost) {
-                IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-                // Create a TCP/IP socket.
- 
-                foreach (IPAddress curAddr in ipHostInfo.AddressList) {
-                    try {
-                        IPEndPoint ipe = new IPEndPoint(curAddr, Port);
-                        connection = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                        connection.Bind(ipe);
-                        //connection.Blocking = true;
-                        connection.Listen(10);
-
-                        return;
-                    } catch (SocketException) {
-                        //something mesed up during our connection attempt.
-                        //Wont crash out of the loop since we might have more IPs to try
-                        continue;
-                    }
-                }
-            } else {
-                if (String.IsNullOrEmpty(Address)) return;
-
-                IPHostEntry hostEntry;
-                if (Address == "localhost")
-                    hostEntry = Dns.GetHostEntry(Dns.GetHostName());
-                else
-                    hostEntry = Dns.GetHostEntry(Address);
-
-                // Loop through the AddressList to obtain the supported AddressFamily. This is to avoid
-                // an exception that occurs when the host IP Address is not compatible with the address family
-                // (typical in the IPv6 case).
-                foreach (IPAddress curAddr in hostEntry.AddressList) {
-                    try {
-                        IPEndPoint ipe = new IPEndPoint(curAddr, Port);
-                        connection = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-
-                        connection.Connect(ipe);
-
-                        if (connection.Connected) {
-                            return;
-                        } else {
-                            continue;
-                        }
-                    } catch (SocketException) {
-                        //something mesed up during our connection attempt.
-                        //Wont crash out of the loop since we might have more IPs to try
-                        continue;
-                    }
-                }
-                connection = null;
-            }
-        }
-   
         /// <summary>
         /// This class only supports sending strings.
         /// </summary>
@@ -91,33 +43,12 @@ namespace Networking_IRC_Project {
             if (connection == null || !connection.Connected)
                 throw new Exception("No Connection Established"); //TODO: add custom exception
 
-            UTF8Encoding encoding = new UTF8Encoding();
-            byte[] msg = encoding.GetBytes(data);
+            byte[] msg = Util.StoB(data);
 
-            if (msg.Length > 256)
+            if (msg.Length > MsgSize)
                 throw new Exception("Messeage too long"); //TODO: custom exception/splitting
 
             connection.Send(msg);
-                
-        }
-
-        private void Listen() {
-            new Thread(() => {
-                Socket tempListener = connection.Accept();
-                while (!KillConnection) {
-                    try {
-
-                        byte[] buffer = new byte[256];
-                        int size = tempListener.Receive(buffer);
-                        String temp = Encoding.UTF8.GetString(buffer, 0, size);
-
-                        OnMsg?.Invoke(temp);
-                    } catch (SocketException e) {
-                        break;
-                    }
-                    Thread.Sleep(1000);
-                }
-            }).Start();
         }
 
         public void Dispose() {
@@ -125,6 +56,110 @@ namespace Networking_IRC_Project {
             connection.Shutdown(SocketShutdown.Both);
             connection.Close();
             connection.Dispose();
+        }
+
+        private void Connect() {
+            if (String.IsNullOrEmpty(Address)) return;
+
+            IPHostEntry hostEntry;
+            if (Address == "localhost")
+                hostEntry = Dns.GetHostEntry(Dns.GetHostName());
+            else
+                hostEntry = Dns.GetHostEntry(Address);
+
+            // Loop through the AddressList to obtain the supported AddressFamily. This is to avoid
+            // an exception that occurs when the host IP Address is not compatible with the address family
+            // (typical in the IPv6 case).
+            foreach (IPAddress curAddr in hostEntry.AddressList) {
+                try {
+                    IPEndPoint ipe = new IPEndPoint(curAddr, Port);
+                    connection = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    connection.Connect(ipe);
+
+                    if (connection.Connected) {
+                        OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Succes);
+
+                        new Thread(() => {
+                            while (!KillConnection) {
+                                byte[] buffer = new byte[MsgSize];
+                                int size = connection.Receive(buffer);
+                                //connection.Send(buffer);
+                                String temp = Util.BtoS(buffer);
+
+                                OnMsg?.Invoke(connection, temp);
+
+                                Thread.Sleep(1000);
+                            }
+                        }).Start();
+                        return;
+                    } else {
+                        continue;
+                    }
+                } catch (SocketException) {
+                    //something mesed up during our connection attempt.
+                    //Wont crash out of the loop since we might have more IPs to try
+                    continue;
+                }
+            }
+            OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Failure);
+            connection = null;
+
+        }
+
+        private void Listen() {
+            IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+            // Create a TCP/IP socket.
+
+            foreach (IPAddress curAddr in ipHostInfo.AddressList) {
+                try {
+                    IPEndPoint ipe = new IPEndPoint(curAddr, Port);
+                    connection = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                    connection.Bind(ipe);
+                    connection.Listen(10);
+
+                    IsListining = true;
+                    break;
+                } catch (SocketException) {
+                    //something mesed up during our connection attempt.
+                    //Wont crash out of the loop since we might have more IPs to try
+                    continue;
+                }
+            }
+
+            if (!IsListining) {
+                OnConnection?.Invoke("listen", ConnectionStatus.Failure);
+            } else {
+                OnConnection?.Invoke("listen", ConnectionStatus.Succes);
+
+                new Thread(() => {
+                    while (!KillConnection) {
+                        Socket tempListener = connection.Accept();
+                        OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Succes);
+
+                        new Thread((soc) => {
+                            Socket tempSocket = soc as Socket;
+                            while (!KillConnection) {
+                                try {
+
+                                    byte[] buffer = new byte[MsgSize];
+                                    int size = tempSocket.Receive(buffer);
+                                    String temp = Util.BtoS(buffer);
+
+                                    OnMsg?.Invoke(tempSocket, temp);
+                                } catch (Exception e) {
+                                    break;
+                                }
+
+                                Thread.Sleep(1000);
+                            }
+
+                            OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Failure);
+
+                        }).Start(tempListener);
+                    }
+
+                }).Start();
+            }
         }
     }
 }

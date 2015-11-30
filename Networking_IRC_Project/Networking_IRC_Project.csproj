@@ -44,10 +44,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Client.cs" />
+    <Compile Include="Errors.cs" />
     <Compile Include="Host.cs" />
+    <Compile Include="HostCommands.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Room.cs" />
     <Compile Include="TCPHandler.cs" />
+    <Compile Include="User.cs" />
     <Compile Include="Util.cs" />
   </ItemGroup>
   <ItemGroup>

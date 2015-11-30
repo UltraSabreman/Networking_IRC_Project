@@ -43,5 +43,13 @@ namespace Networking_IRC_Project {
                 Console.BackgroundColor = oldb;
             }
         }
+
+        public static byte[] StoB(String str) {
+            return new UTF8Encoding().GetBytes(str);
+        }
+
+        public static String BtoS(byte[] bytes) {
+            return Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+        }
     }
 }
