@@ -22,20 +22,24 @@ namespace IRC_Interface {
                 }
 
             };
-            Commands["disconnect"] = (soc, args) => {
-                String nick = args[0];
-                if (Rooms["#root"].HasUser(nick)) {
-                    var userRooms = Rooms["#root"].ConnectedUsers[nick].ConnectedRooms;
-                    foreach (Room r in userRooms) {
-                        r.RemoveUser(nick);
-                    }
-                    soc.Shutdown(SocketShutdown.Both);
-                    soc.Close();
+
+            Commands["nicklist"] = (soc, args) => {
+                String room = args[0];
+                if (Rooms.ContainsKey(room)) {
+                    soc.Send(Util.StoB("nicks " + room + " " + Rooms[room].GetAllNicks()));
                 } else {
-                    soc.Send(Util.StoB(Errors.NoUser));
+                    soc.Send(Util.StoB(Errors.NoChan));
                 }
             };
 
+            Commands["roomlist"] = (soc, args) => {
+                String rooms = "";
+                int i = 0;
+                foreach (Room r in Rooms.Values)
+                    rooms += r.Name + (++i < Rooms.Values.Count ? ", " : "");
+
+               soc.Send(Util.StoB("said #root #root " + rooms));
+            };
 
             Commands["join"] = (soc, args) => {
                 String nick = args[0];
@@ -55,14 +59,27 @@ namespace IRC_Interface {
             Commands["leave"] = (soc, args) => {
                 String nick = args[0];
                 String roomName = args[1];
-                if (Rooms.ContainsKey(roomName)) {
-                    if (Rooms[roomName].HasUser(nick)) {
-                        Rooms[roomName].RemoveUser(nick);
+                if (roomName == "#root") {
+                    if (Rooms["#root"].HasUser(nick)) {
+                        var userRooms = Rooms["#root"].ConnectedUsers[nick].ConnectedRooms;
+                        foreach (Room r in userRooms) {
+                            r.RemoveUser(nick);
+                        }
+                        soc.Shutdown(SocketShutdown.Both);
+                        soc.Close();
                     } else {
                         soc.Send(Util.StoB(Errors.NoUser));
                     }
                 } else {
-                    soc.Send(Util.StoB(Errors.NoChan));
+                    if (Rooms.ContainsKey(roomName)) {
+                        if (Rooms[roomName].HasUser(nick)) {
+                            Rooms[roomName].RemoveUser(nick);
+                        } else {
+                            soc.Send(Util.StoB(Errors.NoUser));
+                        }
+                    } else {
+                        soc.Send(Util.StoB(Errors.NoChan));
+                    }
                 }
 
             };
@@ -70,7 +87,7 @@ namespace IRC_Interface {
                 String target = args[0];
                 String src = args[1];
                 String msg = "";
-                for (int i = 2; i < args.Length; i++) msg += args[i];
+                for (int i = 2; i < args.Length; i++) msg += (args[i] + " ");
                 if (target.StartsWith("#")) {
                     if (Rooms.ContainsKey(target)) {
                         Rooms[target].Say(src, msg);

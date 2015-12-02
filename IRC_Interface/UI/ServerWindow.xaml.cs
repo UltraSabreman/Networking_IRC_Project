@@ -57,7 +57,7 @@ namespace IRC_Interface {
             connection.CreateSocket(true);
 
             Room rootRoom = new Room("#root");
-            rootRoom.MOTD = "Welcome to the server!";
+            rootRoom.MOTD = "Welcome to the server! All Users are atumatically put into this room. Leaving this room will remove you form the server.";
 
             Rooms[rootRoom.Name] = rootRoom;
         }
@@ -90,6 +90,10 @@ namespace IRC_Interface {
             Dispatcher.Invoke(new Action(() => {
                 theTextArea.Inlines.Add(new Run(text + "\n"));
             }));
+        }
+
+        private void serverLog_TextChanged(object sender, TextChangedEventArgs e) {
+            serverLog.ScrollToEnd();
         }
     }
 }

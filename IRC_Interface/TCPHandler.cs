@@ -100,7 +100,7 @@ namespace IRC_Interface {
 
                                 OnMsg?.Invoke(connection, temp);
 
-                                Thread.Sleep(1000);
+                                Thread.Sleep(100);
                             }
                         });
                         Listner.Start();
@@ -165,7 +165,7 @@ namespace IRC_Interface {
 
                                     OnMsg?.Invoke(tempSocket, temp);
 
-                                Thread.Sleep(1000);
+                                Thread.Sleep(100);
                             }
 
                             OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Failure);

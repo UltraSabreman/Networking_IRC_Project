@@ -21,6 +21,16 @@ namespace IRC_Interface {
             Name = name;
         }
 
+        public String GetAllNicks() {
+            String nicks = "";
+            int i = 0;
+            foreach (User u in ConnectedUsers.Values) {
+                nicks += u.Nick + (++i < ConnectedUsers.Values.Count ? ", " : "");
+            }
+
+            return nicks;
+        }
+
         public bool HasUser(String Nick) {
             return ConnectedUsers.ContainsKey(Nick);
         }
@@ -62,8 +72,7 @@ namespace IRC_Interface {
                     u.SendMsg("joined " + newUser.Nick + " " + Name);
             }
 
-            newUser.SendMsg("users " + Name + " " + nicks);
-            //Say(Name, newUser.Nick + " joined the room.");
+            //newUser.SendMsg("nicks " + Name + " " + GetAllNicks());
         }
 
         public void Say(String SourceNick, String Message) {

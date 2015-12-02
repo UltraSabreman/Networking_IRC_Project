@@ -21,6 +21,11 @@ namespace IRC_Interface {
     /// </summary>
     public partial class ClientWindow : Window {
 
+        //TODO: figure out how to gracefully handle all disconects and app exits (kill all process)
+        //TODO: stop nick command appearn twice on first join
+        //TODO: add private messeging.
+        //TODO: add ability to join mutliple rooms and messeage multiple rooms.
+
         private static Object theLock = new Object();
         TCPHandler connection;
         private bool IsConnected = false;
@@ -28,14 +33,14 @@ namespace IRC_Interface {
         public String ourNickname { get; set; }
         public int Port { get; set; }
 
-        private Brush ColChanChange = (Brush)new BrushConverter().ConvertFromString("#4CBBE0FF");
-        private Brush ColChanMsg = (Brush)new BrushConverter().ConvertFromString("#E0714CFF");
-        private Brush ColChanNormal = (Brush)new BrushConverter().ConvertFromString("#FFFFFFFF");
+        private Brush ColChanChange = (Brush)new BrushConverter().ConvertFromString("#4CBBE0");
+        private Brush ColChanMsg = (Brush)new BrushConverter().ConvertFromString("#E0714C");
+        private Brush ColChanNormal = (Brush)new BrushConverter().ConvertFromString("#FFFFFF");
 
         private Dictionary<String, Paragraph> channelBuffers = new Dictionary<String, Paragraph>();
 
         //This is used to interpret commands that come from the server.
-        private Dictionary<String, Action<Socket, String[]>> ServerCommands = new Dictionary<String, Action<Socket, String[]>>();
+        private Dictionary<String, Action<String[]>> ServerCommands = new Dictionary<String, Action<String[]>>();
         //This is used to interpert chat commands and send stuff to the server.
         private Dictionary<String, Action<String[]>> ClientCommands = new Dictionary<String, Action<String[]>>();
 
@@ -53,14 +58,24 @@ namespace IRC_Interface {
                 ChatTarget.Text = "Chatting with: " + tar;
                 //TODO: handle private messeages.
                 if (tar.StartsWith("#")) {
+
                     if (!channelBuffers.ContainsKey(tar))
                         channelBuffers[tar] = new Paragraph();
 
                     MessageBox.Document.Blocks.Clear();
                     MessageBox.Document.Blocks.Add(channelBuffers[tar]);
 
-                    ChannelList.SelectedValue = tar;
+                    foreach (Label l in ChannelList.Items) {
+                        if (l.Content as String == tar) {
+                            ChannelList.SelectedItem = l;
+                            break;
+                        }
+                    }
+
                     currentChannel = tar;
+                    connection.Send("nicklist " + currentChannel);
+
+                    //connection.Send("nicklist " + currentChannel);
                 }
             }));
         }
@@ -106,6 +121,7 @@ namespace IRC_Interface {
 
         private void ChannelList_SelectionChanged(object sender, SelectionChangedEventArgs e) {
             Label selected = (ChannelList.SelectedItem as Label);
+            if (selected == null) return;
             selected.Background = ColChanNormal;
             ChangeChatTarget(selected.Content as String);
         }
@@ -135,7 +151,7 @@ namespace IRC_Interface {
                 if (String.IsNullOrEmpty(commandName) || !ServerCommands.ContainsKey(commandName)) {
                     return;
                 }
-                ServerCommands[commandName](soc, args);
+                ServerCommands[commandName](args);
             }
         }
 
@@ -174,5 +190,8 @@ namespace IRC_Interface {
             }
         }
 
+        private void MessageBox_TextChanged(object sender, TextChangedEventArgs e) {
+            MessageBox.ScrollToEnd();
+        }
     }
 }

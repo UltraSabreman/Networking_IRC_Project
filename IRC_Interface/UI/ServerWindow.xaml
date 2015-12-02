@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Title="ServerWindow" Height="300" Width="300">
     <Grid>
-        <RichTextBox x:Name="serverLog" Margin="10,10,10,35"/>
+        <RichTextBox x:Name="serverLog" Margin="10,10,10,35" TextChanged="serverLog_TextChanged" IsReadOnly="True" VerticalScrollBarVisibility="Auto"/>
         <Button x:Name="killbutton" Content="Kill Server" Margin="10,0,10,10" Height="20" VerticalAlignment="Bottom" Click="killbutton_Click"/>
 
     </Grid>
