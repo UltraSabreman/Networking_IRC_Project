@@ -19,6 +19,8 @@ namespace IRC_Interface {
         public event TCPMsgHandler OnMsg;
         public delegate void TCPConnection(String IP, ConnectionStatus status);
         public event TCPConnection OnConnection;
+        public delegate void TCPTerminated();
+        public event TCPTerminated OnBadThing;
 
         public bool KillConnection { get; set; } = false;
         public bool IsListining { get; set; } = false;
@@ -56,12 +58,9 @@ namespace IRC_Interface {
         public void Dispose() {
             KillConnection = true;
             try {
-                Listner.Abort();
                 connection.Shutdown(SocketShutdown.Both);
-                connection.Close();
-                connection.Dispose();
-            } catch (Exception e) {
-
+            } catch (Exception) {
+                //This means that the connection is already terminated, so no real need to do anything.
             }
         }
 
@@ -87,12 +86,21 @@ namespace IRC_Interface {
                         OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Succes);
 
                         Listner = new Thread(() => {
-                            while (!KillConnection) {
+                            while (true) {
                                 byte[] buffer = new byte[MsgSize];
+                                int size = 0;
+
                                 try {
-                                    connection.Receive(buffer);
+                                    size = connection.Receive(buffer);
                                 } catch (SocketException) {
                                     KillConnection = true;
+                                    size = 0;
+                                }
+
+                                if (size == 0 && KillConnection) {
+                                    OnBadThing?.Invoke();
+                                    connection.Close();
+                                    connection.Dispose();
                                     break;
                                 }
                                 //connection.Send(buffer);
@@ -128,6 +136,7 @@ namespace IRC_Interface {
                     IPEndPoint ipe = new IPEndPoint(curAddr, Port);
                     connection = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
                     connection.Bind(ipe);
+                    connection.Blocking = false;
                     connection.Listen(10);
 
                     IsListining = true;
@@ -145,32 +154,63 @@ namespace IRC_Interface {
                 OnConnection?.Invoke("listen", ConnectionStatus.Succes);
 
                 Listner = new Thread(() => {
-                    while (!KillConnection) {
-                        Socket tempListener = connection.Accept();
-                        OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Succes);
+                    while (true) {
+                        if (!KillConnection) {
+                            try {
+                                Socket tempListener = connection.Accept();
+                                OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Succes);
 
-                        new Thread((soc) => {
-                            Socket tempSocket = soc as Socket;
-                            while (!KillConnection) {
+                                new Thread((soc) => {
+                                    Socket tempSocket = soc as Socket;
+                                    while (true) {
 
-                                    byte[] buffer = new byte[MsgSize];
-                                    try {
+                                        byte[] buffer = new byte[MsgSize];
+                                        if (KillConnection)
+                                            tempSocket.Shutdown(SocketShutdown.Both);
+                                        int size = 0;
+                                        try {
+                                            size = tempSocket.Receive(buffer);
 
-                                        tempSocket.Receive(buffer);
-                                    } catch (SocketException) {
-                                        KillConnection = true;
-                                        break;
+                                            String temp = Util.BtoS(buffer);
+
+                                            OnMsg?.Invoke(tempSocket, temp);
+                                        } catch (SocketException e) {
+                                            if (e.ErrorCode != (int)SocketError.WouldBlock) {
+                                                KillConnection = true;
+                                            }
+                                        } catch (ObjectDisposedException) {
+                                            break;
+                                        }
+
+                                        if (size == 0 && KillConnection) {
+                                            OnBadThing?.Invoke();
+                                            tempSocket.Close();
+                                            tempSocket.Dispose();
+                                            break;
+                                        }
+                                        Thread.Sleep(100);
                                     }
-                                    String temp = Util.BtoS(buffer);
 
-                                    OnMsg?.Invoke(tempSocket, temp);
+                                    OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Failure);
 
-                                Thread.Sleep(100);
+                                }).Start(tempListener);
+                            } catch (SocketException e) {
+                                //If the accept call has nothing to accept, this will do nothing
+                                //All other errors are re-thrown.
+                                if (e.ErrorCode != (int)SocketError.WouldBlock)
+                                    throw e;
                             }
-
-                            OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Failure);
-
-                        }).Start(tempListener);
+                        } else {
+                            try {
+                                connection.Shutdown(SocketShutdown.Both);
+                            } catch (SocketException) {
+                                //The socket was not connected/listening.
+                            }
+                            connection.Close();
+                            connection.Dispose();
+                            break;
+                        }
+                        Thread.Sleep(100);
                     }
 
                 });

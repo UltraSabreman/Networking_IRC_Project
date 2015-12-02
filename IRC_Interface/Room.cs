@@ -52,7 +52,7 @@ namespace IRC_Interface {
                         u.SendMsg("left " + temp.Nick + " " + Name);
                 }
 
-                temp.SendMsg("left " + Name + (instigator != null ? instigator + " " + reason : ""));
+                temp.SendMsg("left " + temp.Nick + " " + Name + (instigator != null ? instigator + " " + reason : ""));
                 //say(Name, Nick + " left the room.");
                 return temp;
             }

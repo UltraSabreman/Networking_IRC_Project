@@ -22,7 +22,11 @@ namespace IRC_Interface {
                 for (int i = 2; i < args.Length; i++) msg += (args[i] + " ");
 
                 //TODO: private messeageing
-                PrintLine(srcNick + ": " + msg, chan);
+                if (srcNick != chan)
+                    PrintLine(srcNick + ": " + msg, chan);
+                else
+                    PrintLine(msg, chan);
+
                 if (chan != currentChannel) {
                     Dispatcher.Invoke(new Action(() => {
                         foreach (Label l in ChannelList.Items) {
@@ -87,27 +91,36 @@ namespace IRC_Interface {
             };
 
             ServerCommands["left"] = (args) => {
-                String chanel = args[0];
-                String nick = args[1];
+                String nick = args[0];
+                String channel = args[1];
 
                 if (nick == ourNickname) {
-                    ChangeChatTarget("#root");
-                    Dispatcher.Invoke(new Action(() => {
-                        foreach (Label l in ChannelList.Items) {
-                            if ((l.Content as String) == chanel)
-                                ChannelList.Items.Remove(l);
-                        }
-                    }));
-                    PrintLine("You left " + chanel);
-                } else if (nick != ourNickname && chanel == currentChannel) {
+                    if (channel == "#root") {
+                        connection.Dispose();
+                        return;
+                    } else {
+                        ChangeChatTarget("#root");
+                        Dispatcher.Invoke(new Action(() => {
+                            Object removeTar = null;
+                            foreach (Label l in ChannelList.Items) {
+                                if ((l.Content as String) == channel) {
+                                    removeTar = l;
+                                    break;
+                                }
+                            }
+                            ChannelList.Items.Remove(removeTar);
+                        }));
+                        PrintLine("You left " + channel);
+                    }
+                } else if (nick != ourNickname && channel == currentChannel) {
                     Dispatcher.Invoke(new Action(() => {
                         NickList.Items.Remove(nick);
-                        PrintLine(nick + " left " + chanel);
+                        PrintLine(nick + " left " + channel);
                     }));
                 } else {
                     Dispatcher.Invoke(new Action(() => {
                         foreach (Label l in ChannelList.Items) {
-                            if ((l.Content as String) == chanel) {
+                            if ((l.Content as String) == channel) {
                                 l.Background = ColChanChange;
                             }
                         }

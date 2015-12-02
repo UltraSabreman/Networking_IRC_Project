@@ -61,10 +61,9 @@ namespace IRC_Interface {
                 String roomName = args[1];
                 if (roomName == "#root") {
                     if (Rooms["#root"].HasUser(nick)) {
-                        var userRooms = Rooms["#root"].ConnectedUsers[nick].ConnectedRooms;
-                        foreach (Room r in userRooms) {
-                            r.RemoveUser(nick);
-                        }
+                        Rooms["#root"].GetUser(nick).LeaveAllRooms();
+
+                        //TODO: better disconnect?
                         soc.Shutdown(SocketShutdown.Both);
                         soc.Close();
                     } else {

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -35,9 +36,15 @@ namespace IRC_Interface {
         }
 
         private void killbutton_Click(object sender, RoutedEventArgs e) {
-            //TODO: kill TCP gracefully and kick all clients well.
-            connection.Dispose();
-            App.Current.Shutdown();
+            serverLog.IsEnabled = false;
+            killbutton.IsEnabled = false;
+
+            new Thread(() => {
+                connection.Dispose();
+                Dispatcher.Invoke(new Action(() => {
+                    App.Current.Shutdown();
+                }));
+            }).Start();
         }
 
 

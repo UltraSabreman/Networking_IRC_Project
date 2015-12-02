@@ -53,6 +53,13 @@ namespace IRC_Interface {
             MessageBox.Document = new FlowDocument();
 
         }
+
+        protected override void OnClosed(EventArgs e) {
+            base.OnClosed(e);
+            connection.Dispose();
+        }
+
+
         public void ChangeChatTarget(String tar) {
             Dispatcher.Invoke(new Action(() => {
                 ChatTarget.Text = "Chatting with: " + tar;
@@ -88,6 +95,13 @@ namespace IRC_Interface {
 
                 connection.OnConnection += OnConnectionState;
                 connection.OnMsg += OnMesseage;
+                connection.OnBadThing += () => {
+                    System.Windows.MessageBox.Show("You have been Disconnected from the server.", "Connection Closed", MessageBoxButton.OK);
+                    Dispatcher.Invoke(new Action(() => {
+                        if (App.Current != null)
+                            App.Current.Shutdown();
+                    }));
+                };
 
                 connection.CreateSocket(false);
 
@@ -111,6 +125,7 @@ namespace IRC_Interface {
 
         }
 
+        
         private void SubmitMSG_Click(object sender, RoutedEventArgs e) {
             SendChatMessage();
         }

@@ -25,6 +25,11 @@ namespace IRC_Interface {
 
         }
 
+        public void LeaveAllRooms() {
+            for (int i = 0; i < ConnectedRooms.Count; i++)
+                ConnectedRooms[i].RemoveUser(Nick);
+            ConnectedRooms.Clear();
+        }
        
 
         public void SendMsg(String msg) {
