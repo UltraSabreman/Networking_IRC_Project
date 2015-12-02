@@ -20,7 +20,7 @@ namespace IRC_Interface {
         public InitWindow() {
             InitializeComponent();
 
-            ServerSelect.IsChecked = true;
+            ClientSelect.IsChecked = true;
         }
 
         private void StartButton_Click(object sender, RoutedEventArgs e) {

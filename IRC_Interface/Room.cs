@@ -37,8 +37,13 @@ namespace IRC_Interface {
 
                 ConnectedUsers.Remove(Nick);
 
+                foreach (User u in ConnectedUsers.Values) {
+                    if (u != temp)
+                        u.SendMsg("left " + temp.Nick + " " + Name);
+                }
+
                 temp.SendMsg("left " + Name + (instigator != null ? instigator + " " + reason : ""));
-                Say(Name, Nick + " left the room.");
+                //say(Name, Nick + " left the room.");
                 return temp;
             }
         }
@@ -47,15 +52,18 @@ namespace IRC_Interface {
             ConnectedUsers[newUser.Nick] = newUser;
             newUser.ConnectedRooms.Add(this);
 
-            newUser.SendMsg("joined " + Name);
+            newUser.SendMsg("joined " + newUser.Nick + " " + Name);
             newUser.SendMsg("said " + Name + " " + Name + " " + MOTD);
 
             StringBuilder nicks = new StringBuilder();
-            foreach (User u in ConnectedUsers.Values)
+            foreach (User u in ConnectedUsers.Values) {
                 nicks.Append(u.Nick).Append(", ");
+                if (u != newUser)
+                    u.SendMsg("joined " + newUser.Nick + " " + Name);
+            }
 
-            newUser.SendMsg("said " + Name + " " + Name + " List Users: " + nicks);
-            Say(Name, newUser.Nick + " joined the room.");
+            newUser.SendMsg("users " + Name + " " + nicks);
+            //Say(Name, newUser.Nick + " joined the room.");
         }
 
         public void Say(String SourceNick, String Message) {

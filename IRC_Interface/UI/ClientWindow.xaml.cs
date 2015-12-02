@@ -28,8 +28,16 @@ namespace IRC_Interface {
         public String ourNickname { get; set; }
         public int Port { get; set; }
 
-        private Paragraph textArea = new Paragraph();
-        private Dictionary<String, Action<Socket, String[]>> Commands = new Dictionary<String, Action<Socket, String[]>>();
+        private Brush ColChanChange = (Brush)new BrushConverter().ConvertFromString("#4CBBE0FF");
+        private Brush ColChanMsg = (Brush)new BrushConverter().ConvertFromString("#E0714CFF");
+        private Brush ColChanNormal = (Brush)new BrushConverter().ConvertFromString("#FFFFFFFF");
+
+        private Dictionary<String, Paragraph> channelBuffers = new Dictionary<String, Paragraph>();
+
+        //This is used to interpret commands that come from the server.
+        private Dictionary<String, Action<Socket, String[]>> ServerCommands = new Dictionary<String, Action<Socket, String[]>>();
+        //This is used to interpert chat commands and send stuff to the server.
+        private Dictionary<String, Action<String[]>> ClientCommands = new Dictionary<String, Action<String[]>>();
 
         private String currentChannel = "";
 
@@ -37,18 +45,30 @@ namespace IRC_Interface {
         public ClientWindow() {
             InitializeComponent();
 
-            MessageBox.Document = new FlowDocument(textArea);
+            MessageBox.Document = new FlowDocument();
 
         }
         public void ChangeChatTarget(String tar) {
             Dispatcher.Invoke(new Action(() => {
                 ChatTarget.Text = "Chatting with: " + tar;
-                currentChannel = tar;
+                //TODO: handle private messeages.
+                if (tar.StartsWith("#")) {
+                    if (!channelBuffers.ContainsKey(tar))
+                        channelBuffers[tar] = new Paragraph();
+
+                    MessageBox.Document.Blocks.Clear();
+                    MessageBox.Document.Blocks.Add(channelBuffers[tar]);
+
+                    ChannelList.SelectedValue = tar;
+                    currentChannel = tar;
+                }
             }));
         }
 
         public void Init() {
             new Thread(() => {
+                InitCommands();
+
                 connection = new TCPHandler(Address, Port);
 
                 connection.OnConnection += OnConnectionState;
@@ -85,9 +105,9 @@ namespace IRC_Interface {
         }
 
         private void ChannelList_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-            //TODO: possibly save text?
-            textArea.Inlines.Clear();
-            ChangeChatTarget(ChannelList.SelectedValue as String);
+            Label selected = (ChannelList.SelectedItem as Label);
+            selected.Background = ColChanNormal;
+            ChangeChatTarget(selected.Content as String);
         }
 
         public void OnConnectionState(String ip, ConnectionStatus status) {
@@ -112,22 +132,46 @@ namespace IRC_Interface {
                     args = cmdParts[1].Split(new char[] { ' ' });
                 }
 
-                if (String.IsNullOrEmpty(commandName) || !Commands.ContainsKey(commandName)) {
+                if (String.IsNullOrEmpty(commandName) || !ServerCommands.ContainsKey(commandName)) {
                     return;
                 }
-                Commands[commandName](soc, args);
+                ServerCommands[commandName](soc, args);
             }
         }
 
-        public void PrintLine(String text) {
+        public void PrintLine(String text, String targetChannel = null) {
+            if (String.IsNullOrEmpty(targetChannel))
+                targetChannel = currentChannel;
+
             Dispatcher.Invoke(new Action(() => {
-                textArea.Inlines.Add(new Run(text + "\n"));
+                channelBuffers[targetChannel].Inlines.Add(new Run(text + "\n"));
             }));
         }
 
         public void SendChatMessage() {
-            connection.Send("say " + currentChannel + " " + ourNickname + " " + ChatBox.Text);
+            String text = ChatBox.Text;
             ChatBox.Text = "";
+
+            if (text.StartsWith("/")) {
+
+                //TODO: make this a dictionary.
+                string[] cmdParts = text.Substring(1).Split(new char[] { ' ' }, 2);
+                String commandName = cmdParts[0];
+
+                string[] args = null;
+
+                if (cmdParts.Length >= 2) {
+                    args = cmdParts[1].Split(new char[] { ' ' });
+                }
+
+                if (String.IsNullOrEmpty(commandName) || !ClientCommands.ContainsKey(commandName)) {
+                    connection.Send("say " + currentChannel + " " + ourNickname + " " + text);
+                } else {
+                    ClientCommands[commandName](args);
+                }
+            } else {
+                connection.Send("say " + currentChannel + " " + ourNickname + " " + text);
+            }
         }
 
     }
