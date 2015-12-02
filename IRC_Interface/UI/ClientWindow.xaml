@@ -1,0 +1,18 @@
+﻿<Window x:Class="IRC_Interface.ClientWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:IRC_Interface"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <TextBox x:Name="ChatBox" Height="23" Margin="10,0,88,10" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Bottom" TextChanged="ChatBox_TextChanged"/>
+        <Button x:Name="SubmitMSG" Content="Send" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" TextBlock.TextAlignment="Center" HorizontalAlignment="Right" 
+                Margin="0,0,10,10" VerticalAlignment="Bottom" Width="73" Height="23" Click="SubmitMSG_Click"/>
+        <ListView x:Name="NickList" HorizontalAlignment="Right" Margin="0,10,10,38" Width="73" SelectionChanged="NickList_SelectionChanged"/>
+        <ListView x:Name="ChannelList" HorizontalAlignment="Left" Margin="10,10,0,38" Width="73" SelectionChanged="ChannelList_SelectionChanged" />
+        <RichTextBox x:Name="MessageBox" Margin="88,10,88,38"/>
+
+    </Grid>
+</Window>

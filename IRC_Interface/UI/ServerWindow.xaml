@@ -1,0 +1,14 @@
+﻿<Window x:Class="IRC_Interface.ServerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:IRC_Interface"
+        mc:Ignorable="d"
+        Title="ServerWindow" Height="300" Width="300">
+    <Grid>
+        <RichTextBox x:Name="serverLog" Margin="10,10,10,35"/>
+        <Button x:Name="killbutton" Content="Kill Server" Margin="10,0,10,10" Height="20" VerticalAlignment="Bottom" Click="killbutton_Click"/>
+
+    </Grid>
+</Window>
