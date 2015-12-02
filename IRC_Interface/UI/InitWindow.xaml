@@ -5,12 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:IRC_Interface"
         mc:Ignorable="d"
-        Title="Configure the App" Height="226.27" Width="300" ResizeMode="NoResize">
+        Title="Configure the App" Height="258.27" Width="300" ResizeMode="NoResize">
     <Grid>
 
 
-        <Button x:Name="StartButton" Content="Start" HorizontalAlignment="Left" Margin="209,167,0,0" VerticalAlignment="Top" Width="75" Click="StartButton_Click"/>
-        <Button x:Name="CancelButton" Content="Cancel" HorizontalAlignment="Left" Margin="129,167,0,0" VerticalAlignment="Top" Width="75" Click="CancelButton_Click"/>
+        <Button x:Name="StartButton" Content="Start" HorizontalAlignment="Left" Margin="209,198,0,0" VerticalAlignment="Top" Width="75" Click="StartButton_Click"/>
+        <Button x:Name="CancelButton" Content="Cancel" HorizontalAlignment="Left" Margin="129,198,0,0" VerticalAlignment="Top" Width="75" Click="CancelButton_Click"/>
         <GroupBox x:Name="groupbox" Header="App Type:" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top">
             <Grid>
                 <RadioButton x:Name="ServerSelect" Content="Server" HorizontalAlignment="Left" Margin="5,5,0,0" VerticalAlignment="Top"  Checked="AppType_Checked" Grid.ColumnSpan="2"/>
@@ -31,6 +31,8 @@
                 <TextBox x:Name="clientPort" HorizontalAlignment="Left" Height="23" Margin="75,4,0,0" TextWrapping="Wrap" Text="1337" VerticalAlignment="Top" Width="177" />
                 <Label Content="Dest Addr:" Margin="0,35,0,0"/>
                 <TextBox x:Name="clientAddr" HorizontalAlignment="Left" Height="23" Margin="75,39,0,0" TextWrapping="Wrap" Text="localhost" VerticalAlignment="Top" Width="177" />
+                <Label Content="Nickname:" Margin="0,65,0,0"/>
+                <TextBox x:Name="clientNick" HorizontalAlignment="Left" Height="23" Margin="75,69,0,0" TextWrapping="Wrap" Text="sabreman" VerticalAlignment="Top" Width="177" />
             </Grid>
         </GroupBox>
 

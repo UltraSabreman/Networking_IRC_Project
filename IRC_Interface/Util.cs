@@ -45,11 +45,11 @@ namespace IRC_Interface {
         }
 
         public static byte[] StoB(String str) {
-            return new UTF8Encoding().GetBytes(str);
+            return new UTF8Encoding().GetBytes(str + "\n");
         }
 
         public static String BtoS(byte[] bytes) {
-            return Encoding.UTF8.GetString(bytes, 0, bytes.Length);
+            return Encoding.UTF8.GetString(bytes, 0, bytes.Length).Replace("\0", String.Empty).Trim();
         }
     }
 }

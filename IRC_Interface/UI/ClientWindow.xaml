@@ -7,12 +7,23 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="350" Width="525">
     <Grid>
-        <TextBox x:Name="ChatBox" Height="23" Margin="10,0,88,10" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Bottom" TextChanged="ChatBox_TextChanged"/>
+        <TextBox x:Name="ChatTarget" TextWrapping="Wrap" Text="Chatting With: " Margin="88,10,88,0" FontSize="10" 
+                 VerticalContentAlignment="Center" Padding="0,-2,0,0" Height="18" VerticalAlignment="Top" IsReadOnly="True"/>
+        <TextBox x:Name="ChatBox" Height="23" Margin="10,0,88,10" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" KeyDown="ChatBox_KeyPress"/>
         <Button x:Name="SubmitMSG" Content="Send" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" TextBlock.TextAlignment="Center" HorizontalAlignment="Right" 
                 Margin="0,0,10,10" VerticalAlignment="Bottom" Width="73" Height="23" Click="SubmitMSG_Click"/>
         <ListView x:Name="NickList" HorizontalAlignment="Right" Margin="0,10,10,38" Width="73" SelectionChanged="NickList_SelectionChanged"/>
         <ListView x:Name="ChannelList" HorizontalAlignment="Left" Margin="10,10,0,38" Width="73" SelectionChanged="ChannelList_SelectionChanged" />
-        <RichTextBox x:Name="MessageBox" Margin="88,10,88,38"/>
+        <RichTextBox x:Name="MessageBox" Margin="88,28,88,38"/>
 
+        <Grid Name="ConnectionOverlay" Background="Gray" Opacity="0.8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Label Content="Connecting to Server" Grid.Row="0" VerticalAlignment="Center" HorizontalAlignment="Center" FontSize="45"/>
+            <Label Content="Please Wait" Grid.Row="0" Margin="5,100,5,0" HorizontalAlignment="Center" FontSize="25"/>
+            <ProgressBar IsIndeterminate="True" Grid.Row="1" Margin="5" Height="25" />
+        </Grid>
     </Grid>
 </Window>

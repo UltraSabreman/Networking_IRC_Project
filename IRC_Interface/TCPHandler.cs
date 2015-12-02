@@ -13,6 +13,8 @@ namespace IRC_Interface {
         private const int MsgSize = 256;
         private Socket connection = null;
 
+        private Thread Listner;
+
         public delegate void TCPMsgHandler(Socket recivingSocket, String messeage);
         public event TCPMsgHandler OnMsg;
         public delegate void TCPConnection(String IP, ConnectionStatus status);
@@ -53,9 +55,14 @@ namespace IRC_Interface {
 
         public void Dispose() {
             KillConnection = true;
-            connection.Shutdown(SocketShutdown.Both);
-            connection.Close();
-            connection.Dispose();
+            try {
+                Listner.Abort();
+                connection.Shutdown(SocketShutdown.Both);
+                connection.Close();
+                connection.Dispose();
+            } catch (Exception e) {
+
+            }
         }
 
         private void Connect() {
@@ -79,10 +86,15 @@ namespace IRC_Interface {
                     if (connection.Connected) {
                         OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Succes);
 
-                        new Thread(() => {
+                        Listner = new Thread(() => {
                             while (!KillConnection) {
                                 byte[] buffer = new byte[MsgSize];
-                                int size = connection.Receive(buffer);
+                                try {
+                                    connection.Receive(buffer);
+                                } catch (SocketException) {
+                                    KillConnection = true;
+                                    break;
+                                }
                                 //connection.Send(buffer);
                                 String temp = Util.BtoS(buffer);
 
@@ -90,7 +102,8 @@ namespace IRC_Interface {
 
                                 Thread.Sleep(1000);
                             }
-                        }).Start();
+                        });
+                        Listner.Start();
                         return;
                     } else {
                         continue;
@@ -131,7 +144,7 @@ namespace IRC_Interface {
             } else {
                 OnConnection?.Invoke("listen", ConnectionStatus.Succes);
 
-                new Thread(() => {
+                Listner = new Thread(() => {
                     while (!KillConnection) {
                         Socket tempListener = connection.Accept();
                         OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Succes);
@@ -139,16 +152,18 @@ namespace IRC_Interface {
                         new Thread((soc) => {
                             Socket tempSocket = soc as Socket;
                             while (!KillConnection) {
-                                try {
 
                                     byte[] buffer = new byte[MsgSize];
-                                    int size = tempSocket.Receive(buffer);
+                                    try {
+
+                                        tempSocket.Receive(buffer);
+                                    } catch (SocketException) {
+                                        KillConnection = true;
+                                        break;
+                                    }
                                     String temp = Util.BtoS(buffer);
 
                                     OnMsg?.Invoke(tempSocket, temp);
-                                } catch (Exception e) {
-                                    break;
-                                }
 
                                 Thread.Sleep(1000);
                             }
@@ -158,7 +173,8 @@ namespace IRC_Interface {
                         }).Start(tempListener);
                     }
 
-                }).Start();
+                });
+                Listner.Start();
             }
         }
     }

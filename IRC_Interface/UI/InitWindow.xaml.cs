@@ -24,13 +24,16 @@ namespace IRC_Interface {
         }
 
         private void StartButton_Click(object sender, RoutedEventArgs e) {
-            Window win = null;
-            if (ServerSelect.IsChecked != null && ServerSelect.IsChecked == true)
-                win = new ServerWindow();
-            else
-                win = new ClientWindow();
+            if (ServerSelect.IsChecked != null && ServerSelect.IsChecked == true) {
+                ServerWindow win = new ServerWindow() { Port = int.Parse(serverPort.Text) };
+                win.Init();
+                win.Show();
+            } else {
+                ClientWindow win = new ClientWindow() { Port = int.Parse(clientPort.Text), Address = clientAddr.Text, ourNickname = clientNick.Text };
+                win.Init();
+                win.Show();
+            }
 
-            win.Show();
             Close();
         }
 

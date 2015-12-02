@@ -19,6 +19,7 @@ namespace IRC_Interface {
     /// Interaction logic for ServerWindow.xaml
     /// </summary>
     public partial class ServerWindow : Window {
+        public int Port { get; set; }
         TCPHandler connection;
         private Dictionary<String, Room> Rooms = new Dictionary<String, Room>();
         private Dictionary<String, Action<Socket, String[]>> Commands = new Dictionary<String, Action<Socket, String[]>>();
@@ -31,9 +32,6 @@ namespace IRC_Interface {
             serverLog.Document = new FlowDocument();
             serverLog.Document.Blocks.Clear();
             serverLog.Document.Blocks.Add(theTextArea);
-
-
-            Init();
         }
 
         private void killbutton_Click(object sender, RoutedEventArgs e) {
@@ -47,6 +45,7 @@ namespace IRC_Interface {
             InitCommands();
 
             connection = new TCPHandler();
+            connection.Port = Port;
             connection.OnMsg += OnMessage;
             connection.OnConnection += (m, s) => {
                 if (s == ConnectionStatus.Succes)
@@ -64,27 +63,33 @@ namespace IRC_Interface {
         }
 
         public void OnMessage(Socket soc, String message) {
-            PrintLine((soc.RemoteEndPoint as IPEndPoint).Address + ": " + message);
+            string[] commands = message.Split(new char [] { '\n' });
+            foreach (String command in commands) {
 
-            string[] cmdParts = message.Split(new char[] { ' ' }, 2);
-            String commandName = cmdParts[0].Replace("\0", String.Empty).Trim();
+                PrintLine((soc.RemoteEndPoint as IPEndPoint).Address + ": " + command);
 
-            string[] args = null;
+                string[] cmdParts = command.Split(new char[] { ' ' }, 2);
+                String commandName = cmdParts[0];
 
-            if (cmdParts.Length >= 2) {
-                args = cmdParts[1].Split(new char[] { ' ' });
+                string[] args = null;
+
+                if (cmdParts.Length >= 2) {
+                    args = cmdParts[1].Split(new char[] { ' ' });
+                }
+
+                if (String.IsNullOrEmpty(commandName) || !Commands.ContainsKey(commandName)) {
+                    soc.Send(Util.StoB(Errors.BadCommand));
+                    return;
+                }
+                Commands[commandName](soc, args);
             }
-
-            if (String.IsNullOrEmpty(commandName) || !Commands.ContainsKey(commandName)) {
-                soc.Send(Util.StoB(Errors.BadCommand));
-                return;
-            }
-            Commands[commandName](soc, args);
         }
 
 
         public void PrintLine(String text) {
-            theTextArea.Inlines.Add(new Run(text));
+            Dispatcher.Invoke(new Action(() => {
+                theTextArea.Inlines.Add(new Run(text + "\n"));
+            }));
         }
     }
 }

@@ -55,6 +55,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ClientCommands.cs" />
     <Compile Include="Room.cs" />
     <Compile Include="TCPHandler.cs" />
     <Compile Include="UI\InitWindow.xaml.cs">

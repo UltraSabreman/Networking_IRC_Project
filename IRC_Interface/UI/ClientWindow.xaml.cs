@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,106 +24,111 @@ namespace IRC_Interface {
         private static Object theLock = new Object();
         TCPHandler connection;
         private bool IsConnected = false;
+        public String Address { get; set; }
+        public String ourNickname { get; set; }
+        public int Port { get; set; }
+
+        private Paragraph textArea = new Paragraph();
+        private Dictionary<String, Action<Socket, String[]>> Commands = new Dictionary<String, Action<Socket, String[]>>();
+
+        private String currentChannel = "";
+
 
         public ClientWindow() {
             InitializeComponent();
 
-            Console.Clear();
-            Util.PrintLine("Mode: ", ConsoleColor.Green, "CLIENT");
+            MessageBox.Document = new FlowDocument(textArea);
 
-            Init();
+        }
+        public void ChangeChatTarget(String tar) {
+            Dispatcher.Invoke(new Action(() => {
+                ChatTarget.Text = "Chatting with: " + tar;
+                currentChannel = tar;
+            }));
         }
 
-        private void ChatBox_TextChanged(object sender, TextChangedEventArgs e) {
+        public void Init() {
+            new Thread(() => {
+                connection = new TCPHandler(Address, Port);
+
+                connection.OnConnection += OnConnectionState;
+                connection.OnMsg += OnMesseage;
+
+                connection.CreateSocket(false);
+
+                new Thread(() => {
+                    while (!IsConnected) {
+                        Thread.Sleep(500);
+                    }
+
+                    connection.Send("connect " + ourNickname);
+                    //connection.Send("join nick #root");
+                }).Start();
+            }).Start();
+        }
+
+        private void ChatBox_KeyPress(object sender, KeyEventArgs e) {
+            if (e.Key == Key.Enter) {
+                SendChatMessage();
+            } else {
+                e.Handled = false;
+            }
 
         }
 
         private void SubmitMSG_Click(object sender, RoutedEventArgs e) {
-
+            SendChatMessage();
         }
 
         private void NickList_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-
+            //TODO: allow user info get or messeage
         }
 
         private void ChannelList_SelectionChanged(object sender, SelectionChangedEventArgs e) {
-
+            //TODO: possibly save text?
+            textArea.Inlines.Clear();
+            ChangeChatTarget(ChannelList.SelectedValue as String);
         }
 
-
-        public void OnMesseage(String message) {
-
+        public void OnConnectionState(String ip, ConnectionStatus status) {
+            if (status == ConnectionStatus.Succes) {
+                Dispatcher.Invoke(new Action(() => {
+                    ConnectionOverlay.Visibility = Visibility.Collapsed;
+                }));
+                IsConnected = true;
+            }
         }
 
-        public void Init() {
-            Util.Print("Host Address: ");
-            String address = Console.ReadLine();
-            Util.Print("Host Port: ");
-            String port = Console.ReadLine();
+        public void OnMesseage(Socket soc, String message) {
+            string[] commands = message.Split(new char[] { '\n' });
+            foreach (String command in commands) {
 
-            Console.Clear();
-            Util.PrintLine("Type '", ConsoleColor.Yellow, "EXIT", "' to exit.");
+                string[] cmdParts = command.Split(new char[] { ' ' }, 2);
+                String commandName = cmdParts[0];
 
+                string[] args = null;
 
-            if (String.IsNullOrEmpty(address))
-                connection = new TCPHandler();
-            else if (String.IsNullOrEmpty(port))
-                connection = new TCPHandler(address);
-            else
-                connection = new TCPHandler(address, int.Parse(port));
-
-            Util.PrintLine("YAY 1");
-
-            connection.OnConnection += (m, s) => {
-                if (s == ConnectionStatus.Succes) {
-                    IsConnected = true;
-                    Util.Print(ConsoleColor.Green, "Connected");
-                } else
-                    Util.Print(ConsoleColor.Red, "Disconnected");
-            };
-            Util.PrintLine("YAY 2");
-
-            connection.OnMsg += (s, msg) => {
-                //lock (theLock) {
-                Util.Print(msg);
-                //}
-            };
-            Util.PrintLine("YAY 3");
-
-            connection.CreateSocket(false);
-            Util.PrintLine("YAY 4");
-
-            new Thread(() => {
-                Util.PrintLine("YAY 5");
-
-                while (!IsConnected) {
-                    Thread.Sleep(500);
+                if (cmdParts.Length >= 2) {
+                    args = cmdParts[1].Split(new char[] { ' ' });
                 }
-                Util.PrintLine("YAY 6");
 
-                connection.Send("connect sabreman");
-                Util.PrintLine("YAY 7");
-
-                Thread.Sleep(3000);
-                connection.Send("ping");
-                Thread.Sleep(3000);
-
-
-                while (true) {
-                    Util.Print("MSG: ");
-                    String msg = Console.ReadLine();
-
-                    if (msg == "EXIT") break;
-                    connection.Send(msg);
-
-                    Thread.Sleep(1000);
+                if (String.IsNullOrEmpty(commandName) || !Commands.ContainsKey(commandName)) {
+                    return;
                 }
-            }).Start();
-
+                Commands[commandName](soc, args);
+            }
         }
 
-        public void Draw() {
-
+        public void PrintLine(String text) {
+            Dispatcher.Invoke(new Action(() => {
+                textArea.Inlines.Add(new Run(text + "\n"));
+            }));
         }
+
+        public void SendChatMessage() {
+            connection.Send("say " + currentChannel + " " + ourNickname + " " + ChatBox.Text);
+            ChatBox.Text = "";
+        }
+
     }
 }

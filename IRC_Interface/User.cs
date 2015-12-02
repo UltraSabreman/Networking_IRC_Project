@@ -17,13 +17,15 @@ namespace IRC_Interface {
 
         //private bool IsAdmin;
 
-        private List<Room> ConnectedRooms = new List<Room>();
+        public List<Room> ConnectedRooms = new List<Room>();
 
         public User(Socket soc, String name) {
             connection = soc;
             Nick = name;
 
         }
+
+       
 
         public void SendMsg(String msg) {
             //TODO: error handling

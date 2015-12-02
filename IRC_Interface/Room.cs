@@ -14,7 +14,7 @@ namespace IRC_Interface {
         public String MOTD;
         //public RoomMode Mode;
 
-        private Dictionary<String, User> ConnectedUsers = new Dictionary<String, User>();
+        public Dictionary<String, User> ConnectedUsers = new Dictionary<String, User>();
 
 
         public Room(String name) {
@@ -24,9 +24,28 @@ namespace IRC_Interface {
         public bool HasUser(String Nick) {
             return ConnectedUsers.ContainsKey(Nick);
         }
+        public User GetUser(String Nick) {
+            return ConnectedUsers[Nick];
+        }
+       
+        public User RemoveUser(String Nick, String instigator = null, String reason = null) {
+            if (!HasUser(Nick)) {
+                return null;
+            } else {
+                User temp = ConnectedUsers[Nick];
+                temp.ConnectedRooms.Remove(this);
+
+                ConnectedUsers.Remove(Nick);
+
+                temp.SendMsg("left " + Name + (instigator != null ? instigator + " " + reason : ""));
+                Say(Name, Nick + " left the room.");
+                return temp;
+            }
+        }
 
         public void AddUser(User newUser) {
             ConnectedUsers[newUser.Nick] = newUser;
+            newUser.ConnectedRooms.Add(this);
 
             newUser.SendMsg("joined " + Name);
             newUser.SendMsg("said " + Name + " " + Name + " " + MOTD);
@@ -36,6 +55,7 @@ namespace IRC_Interface {
                 nicks.Append(u.Nick).Append(", ");
 
             newUser.SendMsg("said " + Name + " " + Name + " List Users: " + nicks);
+            Say(Name, newUser.Nick + " joined the room.");
         }
 
         public void Say(String SourceNick, String Message) {
