@@ -15,6 +15,30 @@ namespace IRC_Interface {
             // Server Commands
             //command template:
             //Commands[""] = (soc, args) => { };
+            
+            //return errors
+            ServerCommands["nick-exists"] = (args) => {
+                var result = System.Windows.MessageBox.Show("The nickname you chose already exists, please use another one.\nClick OK to try again or Cancel to quit.", "Bad nickname", System.Windows.MessageBoxButton.OKCancel);
+                if (result == System.Windows.MessageBoxResult.OK) {
+                    Dispatcher.Invoke(new Action(() => {
+                        new InitWindow().Show();
+                        Close();
+                    }));
+                }
+                connection.Dispose();
+            };
+
+            ServerCommands["no-chan"] = (args) => {
+                PrintLine("Spesified Channel doesn't exist");
+            };
+            ServerCommands["no-user"] = (args) => {
+                PrintLine("Spesified User doesn't exist");
+            };
+            ServerCommands["bad-command"] = (args) => {
+                PrintLine("Bad Command, please try again.");
+            };
+
+            //commands
             ServerCommands["said"] = (args) => {
                 String srcNick = args[0];
                 String chan = args[1];

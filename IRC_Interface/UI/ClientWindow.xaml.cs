@@ -21,7 +21,6 @@ namespace IRC_Interface {
     /// </summary>
     public partial class ClientWindow : Window {
 
-        //TODO: handle bad nick on connect
         //TODO: stop nick command appearn twice on first join
 
         private static Object theLock = new Object();
@@ -96,8 +95,7 @@ namespace IRC_Interface {
                 connection.OnBadThing += () => {
                     System.Windows.MessageBox.Show("You have been Disconnected from the server.", "Connection Closed", MessageBoxButton.OK);
                     Dispatcher.Invoke(new Action(() => {
-                        if (App.Current != null)
-                            App.Current.Shutdown();
+                        Close();
                     }));
                 };
 
