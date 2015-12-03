@@ -21,10 +21,8 @@ namespace IRC_Interface {
     /// </summary>
     public partial class ClientWindow : Window {
 
-        //TODO: figure out how to gracefully handle all disconects and app exits (kill all process)
+        //TODO: handle bad nick on connect
         //TODO: stop nick command appearn twice on first join
-        //TODO: add private messeging.
-        //TODO: add ability to join mutliple rooms and messeage multiple rooms.
 
         private static Object theLock = new Object();
         TCPHandler connection;
@@ -148,6 +146,7 @@ namespace IRC_Interface {
                 }));
                 IsConnected = true;
             }
+
         }
 
         public void OnMesseage(Socket soc, String message) {

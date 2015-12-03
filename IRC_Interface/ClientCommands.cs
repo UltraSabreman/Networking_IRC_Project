@@ -140,6 +140,26 @@ namespace IRC_Interface {
                 }
             };
 
+            ClientCommands["multisay"] = (args) => {
+                var roomsToMsg = new List<String>();
+                String msg = "";
+                foreach (String s in args) {
+                    if (s.StartsWith("#"))
+                        roomsToMsg.Add(s);
+                    else
+                        msg += s + " ";
+                }
+
+                foreach (String room in roomsToMsg)
+                    connection.Send("say " + room + " " + ourNickname + " " + msg);
+            };
+
+            ClientCommands["multijoin"] = (args) => {
+                foreach (String room in args) {
+                    connection.Send("join " + ourNickname + " " + room);
+                }
+            };
+
             ClientCommands["leave"] = (args) => {
                connection.Send("leave " + ourNickname + " " + currentChannel);
             };
@@ -155,6 +175,16 @@ namespace IRC_Interface {
 
             ClientCommands["roomlist"] = (args) => {
                 connection.Send("roomlist");
+            };
+
+            ClientCommands["help"] = (args) => {
+                PrintLine("/help: this info dump");
+                PrintLine("/join #<channelname>: Join a spesified channel (must start with '#'). If the channel doesn't exist, its automatically created.");
+                PrintLine("/leave: makes you leave the current selected channel. Leaving the #root channel disconnects you from the server");
+                PrintLine("/nicklist: manually update the list of users in this room (displayed on the right)");
+                PrintLine("/roomlist: prints a list of all rooms on the server to the #root channel");
+                PrintLine("/multisay <channels list> <message>: provided a space-delimited list of channel names, this will send the provided message to all of them");
+                PrintLine("/multijoin <channel list>: provided a space-delimited list of channel names, this will join (or create) all of them");
             };
 
         }

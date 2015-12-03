@@ -64,7 +64,7 @@ namespace IRC_Interface {
             connection.CreateSocket(true);
 
             Room rootRoom = new Room("#root");
-            rootRoom.MOTD = "Welcome to the server! All Users are atumatically put into this room. Leaving this room will remove you form the server.";
+            rootRoom.MOTD = "Welcome to the server! All Users are atumatically put into this room. Leaving this room will remove you form the server. Type \"/help\" for more info.";
 
             Rooms[rootRoom.Name] = rootRoom;
         }
