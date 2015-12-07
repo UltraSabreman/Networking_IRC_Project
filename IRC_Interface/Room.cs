@@ -1,26 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace IRC_Interface {
-    //TODO: impliment permissions and modes
-    //enum RoomMode { Public, Private, AdminPublic, Admin}
-    //enum UserMode { Normal, LocalAdmin, Admin}
+    /// <summary>
+    /// A simple representation of a channel for the server.
+    /// </summary>
     public class Room {
-        //MUST START WITH '#'
         public String Name { get; private set; }
         public String MOTD;
-        //public RoomMode Mode;
 
         public Dictionary<String, User> ConnectedUsers = new Dictionary<String, User>();
 
-
         public Room(String name) {
             Name = name;
+            MOTD = "Welcome to the channel: " + name;
         }
 
+        /// <summary>
+        /// retrives a comma delimited list of all users in this channel
+        /// </summary>
+        /// <returns>all connected users</returns>
         public String GetAllNicks() {
             String nicks = "";
             int i = 0;
@@ -37,8 +37,14 @@ namespace IRC_Interface {
         public User GetUser(String Nick) {
             return ConnectedUsers[Nick];
         }
-       
-        public User RemoveUser(String Nick, String instigator = null, String reason = null) {
+
+        /// <summary>
+        /// Removes a user from the channel.
+        /// It also send all other conneted users a "left" messaged.
+        /// </summary>
+        /// <param name="Nick">The name of the User to remove</param>
+        /// <returns>The user that was removed or null on error</returns>
+        public User RemoveUser(String Nick) {
             if (!HasUser(Nick)) {
                 return null;
             } else {
@@ -52,12 +58,16 @@ namespace IRC_Interface {
                         u.SendMsg("left " + temp.Nick + " " + Name);
                 }
 
-                temp.SendMsg("left " + temp.Nick + " " + Name + (instigator != null ? instigator + " " + reason : ""));
-                //say(Name, Nick + " left the room.");
+                temp.SendMsg("left " + temp.Nick + " " + Name);
                 return temp;
             }
         }
 
+        /// <summary>
+        /// Adds a user to this channel.
+        /// It also sends all connected users a "joined" message
+        /// </summary>
+        /// <param name="newUser">The user to add.</param>
         public void AddUser(User newUser) {
             ConnectedUsers[newUser.Nick] = newUser;
             newUser.ConnectedRooms.Add(this);
@@ -71,10 +81,13 @@ namespace IRC_Interface {
                 if (u != newUser)
                     u.SendMsg("joined " + newUser.Nick + " " + Name);
             }
-
-            //newUser.SendMsg("nicks " + Name + " " + GetAllNicks());
         }
 
+        /// <summary>
+        /// Broadcasts a message to all connected users
+        /// </summary>
+        /// <param name="SourceNick">Whom this message is from (can be channel name)</param>
+        /// <param name="Message">The message</param>
         public void Say(String SourceNick, String Message) {
             foreach (User u in ConnectedUsers.Values) {
                 u.SendMsg("said " + SourceNick + " " + Name + " " + Message);

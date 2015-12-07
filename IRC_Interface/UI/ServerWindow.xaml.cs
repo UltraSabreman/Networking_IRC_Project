@@ -1,33 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace IRC_Interface {
     /// <summary>
-    /// Interaction logic for ServerWindow.xaml
+    /// Handled the logic for the server and updates it's UI.
     /// </summary>
     public partial class ServerWindow : Window {
         public int Port { get; set; }
         TCPHandler connection;
         private Dictionary<String, Room> Rooms = new Dictionary<String, Room>();
         private Dictionary<String, Action<Socket, String[]>> Commands = new Dictionary<String, Action<Socket, String[]>>();
-        //private Regex commandSplitter = new Regex("(?:\\\"([^\"]*)\\\"|([^ ]*))(?: ?)", RegexOptions.Compiled);
 
         private Paragraph theTextArea = new Paragraph();
 
+        /// <summary>
+        /// Initilizes server UI components.
+        /// </summary>
         public ServerWindow() {
             InitializeComponent();
             serverLog.Document = new FlowDocument();
@@ -35,19 +29,9 @@ namespace IRC_Interface {
             serverLog.Document.Blocks.Add(theTextArea);
         }
 
-        private void killbutton_Click(object sender, RoutedEventArgs e) {
-            serverLog.IsEnabled = false;
-            killbutton.IsEnabled = false;
-
-            new Thread(() => {
-                connection.Dispose();
-                Dispatcher.Invoke(new Action(() => {
-                    App.Current.Shutdown();
-                }));
-            }).Start();
-        }
-
-
+        /// <summary>
+        /// This initlizes the listner TCP connection and the #root channel.
+        /// </summary>
         public void Init() {
             InitCommands();
 
@@ -69,6 +53,13 @@ namespace IRC_Interface {
             Rooms[rootRoom.Name] = rootRoom;
         }
 
+        /// <summary>
+        /// When a message is recived, this process it.
+        /// This process is identical to the client one, except it sends an error
+        /// message to the client if the command isn't found.
+        /// </summary>
+        /// <param name="soc">The socket that the message was recived on</param>
+        /// <param name="message">the message</param>
         public void OnMessage(Socket soc, String message) {
             string[] commands = message.Split(new char [] { '\n' });
             foreach (String command in commands) {
@@ -88,17 +79,50 @@ namespace IRC_Interface {
                     soc.Send(Util.StoB(Errors.BadCommand));
                     return;
                 }
+
                 Commands[commandName](soc, args);
             }
         }
 
-
+        /// <summary>
+        /// Writes a line to the server log.
+        /// </summary>
+        /// <param name="text">The text to write.</param>
         public void PrintLine(String text) {
-            Dispatcher.Invoke(new Action(() => {
-                theTextArea.Inlines.Add(new Run(text + "\n"));
-            }));
+            try {
+                Dispatcher.Invoke(new Action(() => {
+                    theTextArea.Inlines.Add(new Run(text + "\n"));
+                }));
+            } catch (Exception) {
+                //For when we're shutting down and try to write.
+            }
         }
 
+
+
+        /// <summary>
+        /// When the kill button is pressed, we gracefully exit the server.
+        /// </summary>
+        private void killbutton_Click(object sender, RoutedEventArgs e) {
+            serverLog.IsEnabled = false;
+            killbutton.IsEnabled = false;
+
+            new Thread(() => {
+                connection.Dispose();
+
+                //You'll notice these calls throughout the code,
+                //when working with WPF, you are not allowed to update the UI directly from anything but 
+                //the UI thread. This ensures that the actions we want to take, are taken in the context
+                //of the UI thread.
+                Dispatcher.Invoke(new Action(() => {
+                    App.Current.Shutdown();
+                }));
+            }).Start();
+        }
+
+        /// <summary>
+        /// This simply makes sure that the server log always scrolls to the newest message.
+        /// </summary>
         private void serverLog_TextChanged(object sender, TextChangedEventArgs e) {
             serverLog.ScrollToEnd();
         }

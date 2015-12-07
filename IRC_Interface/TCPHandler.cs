@@ -1,27 +1,30 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 
 namespace IRC_Interface {
     public enum ConnectionStatus { Succes, Failure};
+    /// <summary>
+    /// This class handles all of the actuall networking.
+    /// </summary>
     public class TCPHandler: IDisposable {
         private const int MsgSize = 256;
         private Socket connection = null;
 
         private Thread Listner;
 
+        //Fired when a message is recived
         public delegate void TCPMsgHandler(Socket recivingSocket, String messeage);
         public event TCPMsgHandler OnMsg;
+        //Fired when connection state changes
         public delegate void TCPConnection(String IP, ConnectionStatus status);
         public event TCPConnection OnConnection;
+        //Fired when connection is dead
         public delegate void TCPTerminated();
         public event TCPTerminated OnBadThing;
 
+        ///Used to kill the connection grecefully.
         public bool KillConnection { get; set; } = false;
         public bool IsListining { get; set; } = false;
         public String Address { set; get; }
@@ -41,7 +44,7 @@ namespace IRC_Interface {
         }
 
         /// <summary>
-        /// This class only supports sending strings.
+        /// Sends a message to the current connection
         /// </summary>
         public void Send(String data) {
             if (connection == null || !connection.Connected)
@@ -55,6 +58,9 @@ namespace IRC_Interface {
             connection.Send(msg);
         }
 
+        /// <summary>
+        /// Tries to greacefully kill the socket
+        /// </summary>
         public void Dispose() {
             KillConnection = true;
             try {
@@ -64,24 +70,29 @@ namespace IRC_Interface {
             }
         }
 
+
+        /// <summary>
+        /// Tries to connect to a server, and then start a listing loop.
+        /// </summary>
         private void Connect() {
             if (String.IsNullOrEmpty(Address)) return;
 
-            IPHostEntry hostEntry;
+            IPAddress [] addresses;
             if (Address == "localhost")
-                hostEntry = Dns.GetHostEntry(Dns.GetHostName());
+                addresses = Dns.GetHostAddresses(Dns.GetHostName());
             else
-                hostEntry = Dns.GetHostEntry(Address);
+                addresses = Dns.GetHostAddresses(Address);
 
             // Loop through the AddressList to obtain the supported AddressFamily. This is to avoid
             // an exception that occurs when the host IP Address is not compatible with the address family
             // (typical in the IPv6 case).
-            foreach (IPAddress curAddr in hostEntry.AddressList) {
+            foreach (IPAddress curAddr in addresses) {
                 try {
                     IPEndPoint ipe = new IPEndPoint(curAddr, Port);
                     connection = new Socket(ipe.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     connection.Connect(ipe);
 
+                    //If we connect, start a simple listining loop.
                     if (connection.Connected) {
                         OnConnection?.Invoke(Address + ":" + Port, ConnectionStatus.Succes);
 
@@ -127,11 +138,17 @@ namespace IRC_Interface {
 
         }
 
+        /// <summary>
+        /// As a server, we will listen on the main socket 
+        /// and spawn of other sockets for incomming connetions. 
+        /// 
+        /// Those connections will be maintined untill the die
+        /// </summary>
         private void Listen() {
-            IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+            IPAddress [] addresses = Dns.GetHostAddresses(Dns.GetHostName());
             // Create a TCP/IP socket.
 
-            foreach (IPAddress curAddr in ipHostInfo.AddressList) {
+            foreach (IPAddress curAddr in addresses) {
                 try {
                     IPEndPoint ipe = new IPEndPoint(curAddr, Port);
                     connection = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -175,9 +192,11 @@ namespace IRC_Interface {
 
                                             OnMsg?.Invoke(tempSocket, temp);
                                         } catch (SocketException e) {
-                                            if (e.ErrorCode != (int)SocketError.WouldBlock) {
+                                            if (e.ErrorCode == (int)SocketError.ConnectionAborted || e.ErrorCode != (int)SocketError.WouldBlock) {
                                                 KillConnection = true;
+                                                size = 0;
                                             }
+                                            
                                         } catch (ObjectDisposedException) {
                                             break;
                                         }

@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace IRC_Interface {
+    /// <summary>
+    /// Just some static utility functions that dont fit anywhere else.
+    /// </summary>
     class Util {
         /// <summary>
         /// Lets you print stuff. Any number of objects.
@@ -44,10 +44,21 @@ namespace IRC_Interface {
             }
         }
 
+        /// <summary>
+        /// Converts a string to a byte array using UTF-8.
+        /// </summary>
+        /// <param name="str">A string</param>
+        /// <returns>the corresponding byte array</returns>
         public static byte[] StoB(String str) {
             return new UTF8Encoding().GetBytes(str + "\n");
         }
 
+        /// <summary>
+        /// Converts a byte array to a string using 
+        /// UTF-8
+        /// </summary>
+        /// <param name="bytes">a byte array</param>
+        /// <returns>the corresponding string.</returns>
         public static String BtoS(byte[] bytes) {
             return Encoding.UTF8.GetString(bytes, 0, bytes.Length).Replace("\0", String.Empty).Trim();
         }

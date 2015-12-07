@@ -1,20 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+﻿using System.Windows;
 
 namespace IRC_Interface {
     /// <summary>
-    /// Interaction logic for InitWindow.xaml
+    /// This window is used to set-up the app, to determine if it's a server or client and
+    /// get the appropriate info.
     /// </summary>
     public partial class InitWindow : Window {
         public InitWindow() {

@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace IRC_Interface {
+    /// <summary>
+    /// This is an extention of the clientwindow class
+    /// Here the mapping of commands (both server and client) to functions
+    /// is defined. 
+    /// 
+    /// I chose to put it into a speparate file so as to not clutter the main one.
+    /// </summary>
     public partial class ClientWindow {
 
         private void InitCommands() {
@@ -16,7 +18,9 @@ namespace IRC_Interface {
             //command template:
             //Commands[""] = (soc, args) => { };
             
-            //return errors
+            //These are the errors the server could return.
+            
+            //Happend when we try to connect with an existing nickname
             ServerCommands["nick-exists"] = (args) => {
                 var result = System.Windows.MessageBox.Show("The nickname you chose already exists, please use another one.\nClick OK to try again or Cancel to quit.", "Bad nickname", System.Windows.MessageBoxButton.OKCancel);
                 if (result == System.Windows.MessageBoxResult.OK) {
@@ -29,7 +33,7 @@ namespace IRC_Interface {
             };
 
             ServerCommands["no-chan"] = (args) => {
-                PrintLine("Spesified Channel doesn't exist");
+                PrintLine("Spesified channel doesn't exist");
             };
             ServerCommands["no-user"] = (args) => {
                 PrintLine("Spesified User doesn't exist");
@@ -38,22 +42,25 @@ namespace IRC_Interface {
                 PrintLine("Bad Command, please try again.");
             };
 
-            //commands
+            //commands that the server will send back to us.
+
+            //This one is sent when someone says something in a channel.
             ServerCommands["said"] = (args) => {
                 String srcNick = args[0];
                 String chan = args[1];
+
+                //This rebuild the message into a single string from a list of words.
                 String msg = "";
                 for (int i = 2; i < args.Length; i++) msg += (args[i] + " ");
 
-                //TODO: private messeageing
                 if (srcNick != chan)
                     PrintLine(srcNick + ": " + msg, chan);
                 else
                     PrintLine(msg, chan);
 
-                if (chan != currentChannel) {
+                if (chan != currentchannel) {
                     Dispatcher.Invoke(new Action(() => {
-                        foreach (Label l in ChannelList.Items) {
+                        foreach (Label l in channelList.Items) {
                             if ((l.Content as String) == chan) {
                                 l.Background = ColChanMsg;
                             }
@@ -62,6 +69,7 @@ namespace IRC_Interface {
                 }
             };
 
+            //Sent when the server send back a list of users on a channel.
             ServerCommands["users"] = (args) => {
                 String channel = args[0];
                 String nicklist = "";
@@ -73,28 +81,30 @@ namespace IRC_Interface {
                     }
                 }));
 
-                PrintLine("Connected Users: " + nicklist);
+                PrintLine("Connected Users: " + nicklist, channel);
             };
 
+            //Sent when a user joines a channel (including us).
+            //This adds users to our userlist or handles moving ourselved into a new channel.
             ServerCommands["joined"] = (args) => {
                 String nick = args[0];
-                String chanel = args[1];
+                String channel = args[1];
 
                 if (nick == ourNickname) {
                     Dispatcher.Invoke(new Action(() => {
-                        ChannelList.Items.Add(new Label() { Content = chanel });
+                        channelList.Items.Add(new Label() { Content = channel });
                     }));
-                    ChangeChatTarget(chanel);
+                    ChangeChatTarget(channel);
 
-                } else if (nick != ourNickname && chanel == currentChannel) {
+                } else if (nick != ourNickname && channel == currentchannel) {
                     Dispatcher.Invoke(new Action(() => {
                         NickList.Items.Add(nick);
-                        PrintLine(nick + " joined " + chanel);
+                        PrintLine(nick + " joined " + channel, channel);
                     }));
                 } else {
                     Dispatcher.Invoke(new Action(() => {
-                        foreach (Label l in ChannelList.Items) {
-                            if ((l.Content as String) == chanel) {
+                        foreach (Label l in channelList.Items) {
+                            if ((l.Content as String) == channel) {
                                 l.Background = ColChanChange;
                             }
                         }
@@ -103,9 +113,10 @@ namespace IRC_Interface {
 
             };
 
+            //Sent when as reply to the nicklist command
             ServerCommands["nicks"] = (args) => {
                 String room = args[0];
-                if (room == currentChannel) {
+                if (room == currentchannel) {
                     Dispatcher.Invoke(new Action(() => {
                         NickList.Items.Clear();
                         for (int i = 1; i < args.Length; i++)
@@ -114,6 +125,9 @@ namespace IRC_Interface {
                 }
             };
 
+            //Send when somone leaves a channel (including ourselves);
+            //If we leave the #root channel, we disconnect from the server and
+            //close our connection.
             ServerCommands["left"] = (args) => {
                 String nick = args[0];
                 String channel = args[1];
@@ -126,24 +140,24 @@ namespace IRC_Interface {
                         ChangeChatTarget("#root");
                         Dispatcher.Invoke(new Action(() => {
                             Object removeTar = null;
-                            foreach (Label l in ChannelList.Items) {
+                            foreach (Label l in channelList.Items) {
                                 if ((l.Content as String) == channel) {
                                     removeTar = l;
                                     break;
                                 }
                             }
-                            ChannelList.Items.Remove(removeTar);
+                            channelList.Items.Remove(removeTar);
                         }));
                         PrintLine("You left " + channel);
                     }
-                } else if (nick != ourNickname && channel == currentChannel) {
+                } else if (nick != ourNickname && channel == currentchannel) {
                     Dispatcher.Invoke(new Action(() => {
                         NickList.Items.Remove(nick);
-                        PrintLine(nick + " left " + channel);
+                        PrintLine(nick + " left " + channel, channel);
                     }));
                 } else {
                     Dispatcher.Invoke(new Action(() => {
-                        foreach (Label l in ChannelList.Items) {
+                        foreach (Label l in channelList.Items) {
                             if ((l.Content as String) == channel) {
                                 l.Background = ColChanChange;
                             }
@@ -152,8 +166,14 @@ namespace IRC_Interface {
                 }
             };
 
+            ClientCommands["pong"] = (args) => {
+                //do nothing.
+            };
+
             //////////////////////
             // Client Commands
+
+            //These are interpreted from the chat box and used to do special things.
 
             ClientCommands["join"] = (args) => {
                 String roomName = args[0];
@@ -185,7 +205,7 @@ namespace IRC_Interface {
             };
 
             ClientCommands["leave"] = (args) => {
-               connection.Send("leave " + ourNickname + " " + currentChannel);
+               connection.Send("leave " + ourNickname + " " + currentchannel);
             };
 
 
@@ -194,7 +214,7 @@ namespace IRC_Interface {
             };
 
             ClientCommands["nicklist"] = (args) => {
-                connection.Send("nicklist " + currentChannel);
+                connection.Send("nicklist " + currentchannel);
             };
 
             ClientCommands["roomlist"] = (args) => {

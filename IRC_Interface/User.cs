@@ -1,21 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Net.Sockets;
-using System.Net;
-using System.Threading;
 
 namespace IRC_Interface {
+    /// <summary>
+    /// A simple representation of a clinet for the server.
+    /// </summary>
     public class User {
         public Socket connection { get; private set; }
-
         public String Nick { get; private set; }
-        public String RealName { get; private set; }
-        public String Email { get; private set; }
-
-        //private bool IsAdmin;
 
         public List<Room> ConnectedRooms = new List<Room>();
 
@@ -26,16 +19,15 @@ namespace IRC_Interface {
         }
 
         public void LeaveAllRooms() {
-            for (int i = 0; i < ConnectedRooms.Count; i++)
-                ConnectedRooms[i].RemoveUser(Nick);
+            while (ConnectedRooms.Count != 0)
+                ConnectedRooms[0].RemoveUser(Nick);
+
             ConnectedRooms.Clear();
         }
        
 
         public void SendMsg(String msg) {
-            //TODO: error handling
             connection.Send(Util.StoB(msg));
         }
-        
     }
 }
