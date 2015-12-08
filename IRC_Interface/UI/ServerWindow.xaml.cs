@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -99,6 +100,11 @@ namespace IRC_Interface {
         }
 
 
+
+        protected override void OnClosing(CancelEventArgs e) {
+            base.OnClosing(e);
+            killbutton_Click(null, null);
+        }
 
         /// <summary>
         /// When the kill button is pressed, we gracefully exit the server.

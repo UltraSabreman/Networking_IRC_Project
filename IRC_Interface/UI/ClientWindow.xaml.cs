@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net.Sockets;
 using System.Threading;
 using System.Windows;
@@ -73,9 +74,15 @@ namespace IRC_Interface {
                     //when working with WPF, you are not allowed to update the UI directly from anything but 
                     //the UI thread. This ensures that the actions we want to take, are taken in the context
                     //of the UI thread.
-                    Dispatcher.Invoke(new Action(() => {
-                        Close();
-                    }));
+                    IsConnected = false;
+                    try {
+                        Dispatcher.Invoke(new Action(() => {
+                            Close();
+                        }));
+                    } catch (Exception) {
+                        //Since the window actually closes during this process, this will throw an exception (Cause it can't compleate)
+                        //So we catch it and do nothing with it.
+                    }
                 };
 
                 connection.CreateSocket(false);
@@ -132,15 +139,16 @@ namespace IRC_Interface {
         //////////////
         // Events
 
-        /// <summary>
-        /// When the window closes we want to gracefull dispose of the connection.
-        /// </summary>
-        protected override void OnClosed(EventArgs e) {
-            base.OnClosed(e);
+        protected override void OnClosing(CancelEventArgs e) {
+            base.OnClosing(e);
             ping.Enabled = false;
             ping.Stop();
 
-            connection.Dispose();
+            if (IsConnected) {
+                connection.Send("leave " + ourNickname + " #root");
+
+                connection.Dispose();
+            }
         }
 
         /// <summary>
